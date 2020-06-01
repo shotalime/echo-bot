@@ -16,7 +16,7 @@ data Updates = Updates
 
 instance FromJSON Updates
 
--- Update
+--  ** Update
 -- This object represents an incoming update.
 -- At most one of the optional parameters can be present in any given update.
 
@@ -35,7 +35,7 @@ data Update = Update
   , poll_answer          :: Maybe PollAnswer -- Optional. A user changed their answer in a non-anonymous poll. Bots receive new votes only in polls that were sent by the bot itself.
   }
 
--- Message
+--  ** Message
 -- This object represents a message.
 
 data Message = Message
@@ -57,13 +57,9 @@ data Message = Message
   , messageCaptionEntities :: Maybe [MessageEntity] -- ^ For messages with a caption, special entities like usernames, URLs, bot commands, etc. that appear in the caption
   , messageAudio :: Maybe Audio -- ^ Message is an audio file, information about the file
   , messageDocument :: Maybe Document -- ^ Message is a general file, information about the file
-
---  , messageGame :: Maybe Game -- ^ Message is a game, information about the game. More about games »
-
+  , messageGame :: Maybe Game -- ^ Message is a game, information about the game. More about games »
   , messagePhoto :: Maybe [PhotoSize] -- ^ Message is a photo, available sizes of the photo
-
---  , messageSticker :: Maybe Sticker -- ^ Message is a sticker, information about the sticker
-
+  , messageSticker :: Maybe Sticker -- ^ Message is a sticker, information about the sticker
   , messageVideo :: Maybe Video -- ^ Message is a video, information about the video
   , messageVoice :: Maybe Voice -- ^ Message is a voice message, information about the file
   , messageVideoNote :: Maybe VideoNote -- ^ Message is a video note, information about the video message
@@ -82,9 +78,8 @@ data Message = Message
   , messageMigrateToChatId :: Maybe ChatId -- ^ The group has been migrated to a supergroup with the specified identifier. This number may be greater than 32 bits and some programming languages may have difficulty/silent defects in interpreting it. But it is smaller than 52 bits, so a signed 64 bit integer or double-precision float type are safe for storing this identifier.
   , messageMigrateFromChatId :: Maybe ChatId -- ^ The supergroup has been migrated from a group with the specified identifier. This number may be greater than 32 bits and some programming languages may have difficulty/silent defects in interpreting it. But it is smaller than 52 bits, so a signed 64 bit integer or double-precision float type are safe for storing this identifier.
   , messagePinnedMessage :: Maybe Message -- ^ Specified message was pinned. Note that the Message object in this field will not contain further reply_to_message fields even if it is itself a reply.
-
---  , messageInvoice :: Maybe Invoice -- ^ Message is an invoice for a payment, information about the invoice. More about payments »
---  , messageSuccessfulPayment :: Maybe SuccessfulPayment -- ^ Message is a service message about a successful payment, information about the payment. More about payments »
+  , messageInvoice :: Maybe Invoice -- ^ Message is an invoice for a payment, information about the invoice. More about payments »
+  , messageSuccessfulPayment :: Maybe SuccessfulPayment -- ^ Message is a service message about a successful payment, information about the payment. More about payments »
   } deriving (Generic, Show)
 
 -- ** MessageEntity
@@ -116,3 +111,47 @@ data MessageEntityType
   | MessageEntityCashtag -- ^ See <https://core.telegram.org/tdlib/docs/classtd_1_1td__api_1_1text_entity_type_cashtag.html>.
   | MessageEntityPhoneNumber -- ^ See <https://core.telegram.org/tdlib/docs/classtd_1_1td__api_1_1text_entity_type_phone_number.html>.
   deriving (Eq, Show, Generic)
+
+
+-- ** User
+
+-- | This object represents a Telegram user or bot.
+--
+-- <https://core.telegram.org/bots/api#user>
+data User = User
+  { userId           :: Int     -- ^ Unique identifier for this user or bot.
+  , userIsBot        :: Bool       -- ^ 'True', if this user is a bot.
+  , userFirstName    :: Text       -- ^ User's or bot's first name.
+  , userLastName     :: Maybe Text -- ^ User‘s or bot’s last name
+  , userUsername     :: Maybe Text -- ^ User‘s or bot’s username
+  , userLanguageCode :: Maybe Text -- ^ IETF language tag of the user's language
+  } deriving (Show, Generic)
+
+-- ** Chat
+
+-- | This object represents a chat.
+--
+-- <https://core.telegram.org/bots/api#chat>
+data Chat = Chat
+  { chatId                           :: Int          -- ^ Unique identifier for this chat. This number may be greater than 32 bits and some programming languages may have difficulty/silent defects in interpreting it. But it is smaller than 52 bits, so a signed 64 bit integer or double-precision float type are safe for storing this identifier.
+  , chatType                         :: ChatType        -- ^ Type of chat.
+  , chatTitle                        :: Maybe Text      -- ^ Title, for supergroups, channels and group chats
+  , chatUsername                     :: Maybe Text      -- ^ Username, for private chats, supergroups and channels if available
+  , chatFirstName                    :: Maybe Text      -- ^ First name of the other party in a private chat
+  , chatLastName                     :: Maybe Text      -- ^ Last name of the other party in a private chat
+  , chatAllMembersAreAdministrators  :: Maybe Bool      -- ^ 'True' if a group has ‘All Members Are Admins’ enabled.
+  , chatPhoto                        :: Maybe ChatPhoto -- ^ Chat photo. Returned only in getChat.
+  , chatDescription                  :: Maybe Text      -- ^ Description, for supergroups and channel chats. Returned only in getChat.
+  , chatInviteLink                   :: Maybe Text      -- ^ Chat invite link, for supergroups and channel chats. Returned only in getChat.
+  , chatPinnedMessage                :: Maybe Message   -- ^ Pinned message, for supergroups. Returned only in getChat.
+  , chatStickerSetName               :: Maybe Text      -- ^ For supergroups, name of group sticker set. Returned only in getChat.
+  , chatCanSetStickerSet             :: Maybe Bool      -- ^ True, if the bot can change the group sticker set. Returned only in getChat.
+  } deriving (Generic, Show)
+
+-- | Type of chat.
+data ChatType
+  = ChatTypePrivate
+  | ChatTypeGroup
+  | ChatTypeSupergroup
+  | ChatTypeChannel
+  deriving (Generic, Show)

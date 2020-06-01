@@ -23,7 +23,7 @@ api :: T.Text
 api = "api.telegram.org"
 
 token :: T.Text
-token = "1214858885:AAEa4sxstviWYUSkw4ELNpJE6ZAGLnQ_g-A"
+token = "change"
 
 botToken :: T.Text
 botToken = mconcat ["bot", token]
