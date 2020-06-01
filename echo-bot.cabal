@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: d5ba5af9b5f63bdc02bac6426a6f95fac82bb17ab123b3f01be60bc3355465f1
+-- hash: 353319c9dd14f7933c53e67fe93a2504fdad53fa2a496dc0b71855817c905f0c
 
 name:           echo-bot
 version:        0.1.0.0
@@ -27,13 +27,22 @@ source-repository head
 
 library
   exposed-modules:
-      Lib
+      Telegram.Bot.API.Types
   other-modules:
       Paths_echo_bot
   hs-source-dirs:
       src
+  default-extensions: OverloadedStrings DeriveGeneric
   build-depends:
-      base >=4.7 && <5
+      QuickCheck
+    , aeson
+    , base >=4.7 && <5
+    , bytestring
+    , modern-uri
+    , req
+    , req-conduit
+    , text
+    , time
   default-language: Haskell2010
 
 executable echo-bot-exe
@@ -42,10 +51,19 @@ executable echo-bot-exe
       Paths_echo_bot
   hs-source-dirs:
       app
+  default-extensions: OverloadedStrings DeriveGeneric
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.7 && <5
+      QuickCheck
+    , aeson
+    , base >=4.7 && <5
+    , bytestring
     , echo-bot
+    , modern-uri
+    , req
+    , req-conduit
+    , text
+    , time
   default-language: Haskell2010
 
 test-suite echo-bot-test
@@ -55,8 +73,17 @@ test-suite echo-bot-test
       Paths_echo_bot
   hs-source-dirs:
       test
+  default-extensions: OverloadedStrings DeriveGeneric
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.7 && <5
+      QuickCheck
+    , aeson
+    , base >=4.7 && <5
+    , bytestring
     , echo-bot
+    , modern-uri
+    , req
+    , req-conduit
+    , text
+    , time
   default-language: Haskell2010

@@ -19,9 +19,21 @@ extra-source-files:
 # common to point users to the README.md file.
 description:         Please see the README on GitHub at <https://github.com/githubuser/echo-bot#readme>
 
+default-extensions:
+- OverloadedStrings
+- DeriveGeneric
+
+
 dependencies:
 - base >= 4.7 && < 5
-
+- QuickCheck
+- text
+- bytestring
+- req-conduit
+- req
+- aeson
+- modern-uri
+- time
 library:
   source-dirs: src
 
