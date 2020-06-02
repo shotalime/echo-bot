@@ -9,7 +9,8 @@ import Network.HTTP.Req
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy as L
 import qualified Text.URI as URI
-
+import Telegram.Bot.API.Types
+import BotConfig
 
 data MyData = MyData
   { size  :: Int
@@ -22,18 +23,17 @@ instance FromJSON MyData
 api :: T.Text
 api = "api.telegram.org"
 
-token :: T.Text
-token = "change"
+
 
 botToken :: T.Text
 botToken = mconcat ["bot", token]
 
 
-getUpdates :: Req (JsonResponse Value)
+getUpdates :: Req LbsResponse
 getUpdates = req POST 
              (https api /: botToken /: "getUpdates")
              NoReqBody
-             jsonResponse
+             lbsResponse
              mempty
 
 
@@ -42,8 +42,10 @@ getUpdates = req POST
 main :: IO ()
 main = runReq defaultHttpConfig $ do
   response <- getUpdates
-  let jsonBody = responseBody response
-  -- L.writeFile "data.json" (responseBody v)
-  liftIO $ L.writeFile "data.json" (encode jsonBody)
+  let body = responseBody response 
+  let dec = eitherDecode body :: Either String Updates
+  liftIO $ print  dec
+  -- return ()
+  
 
 

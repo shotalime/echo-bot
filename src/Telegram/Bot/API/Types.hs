@@ -10,11 +10,11 @@ import qualified Data.ByteString.Char8         as B
 import qualified Data.ByteString.Lazy          as L
 import qualified Text.URI                      as URI
 import           Data.Time.Clock.POSIX          ( POSIXTime )
-
+import           Data.Foldable
 
 data Updates = Updates
   { ok :: Bool
-  , results :: [Update]
+  , result :: [Update]
   } deriving (Show, Generic)
 
 instance FromJSON Updates
@@ -89,8 +89,51 @@ data Message = Message
   -- , messageSuccessfulPayment :: Maybe SuccessfulPayment -- ^ Message is a service message about a successful payment, information about the payment. More about payments »
   } deriving (Generic, Show)
 
-instance FromJSON Message
+
 instance ToJSON Message
+
+instance FromJSON Message where
+  parseJSON (Object v) = 
+    Message <$> v .: "message_id"
+            <*> v .:? "from"
+            <*> v .: "date"
+            <*> v .: "chat"
+            <*> v .:? "forward_from"
+            <*> v .:? "forward_from_chat"
+            <*> v .:? "forward_from_message_id"
+            <*> v .:? "forward_signature"
+            <*> v .:? "forward_date"
+            <*> v .:? "reply_to_message"
+            <*> v .:? "edit_date"
+            <*> v .:? "media_group_id"
+            <*> v .:? "author_signature"
+            <*> v .:? "text"
+            <*> v .:? "entities"
+            <*> v .:? "caption_entities"
+            <*> v .:? "audio"
+            <*> v .:? "document"
+            <*> v .:? "photo"
+            <*> v .:? "video"
+            <*> v .:? "voice"
+            <*> v .:? "video_note"
+            <*> v .:? "caption"
+            <*> v .:? "contact"
+            <*> v .:? "location"
+            <*> v .:? "venue"
+            <*> v .:? "new_chat_members"
+            <*> v .:? "left_chat_member"
+            <*> v .:? "new_chat_title"
+            <*> v .:? "new_chat_photo"
+            <*> v .:? "delete_chat_photo"
+            <*> v .:? "group_chat_created"
+            <*> v .:? "supergroup_chat_created"
+            <*> v .:? "channel_chat_created"
+            <*> v .:? "migrate_to_chat_id"
+            <*> v .:? "migrate_from_chat_id"
+            <*> v .:? "pinned_message"
+
+            
+
 
 -- ** MessageEntity
 
@@ -142,9 +185,17 @@ data User = User
   , userLanguageCode :: Maybe Text -- ^ IETF language tag of the user's language
   } deriving (Show, Generic)
 
+instance FromJSON User where
+  parseJSON (Object v) = 
+    User <$> v .: "id"
+         <*> v .: "is_bot"
+         <*> v .: "first_name"
+         <*> v .:? "last_name"
+         <*> v .:? "username"
+         <*> v .:? "language_code"
 
-instance FromJSON User
 instance ToJSON User
+
 -- ** Chat
 
 -- | This object represents a chat.
@@ -157,7 +208,7 @@ data Chat = Chat
   , chatUsername                     :: Maybe Text      -- ^ Username, for private chats, supergroups and channels if available
   , chatFirstName                    :: Maybe Text      -- ^ First name of the other party in a private chat
   , chatLastName                     :: Maybe Text      -- ^ Last name of the other party in a private chat
-  , chatAllMembersAreAdministrators  :: Maybe Bool      -- ^ 'True' if a group has ‘All Members Are Admins’ enabled.
+  -- , chatAllMembersAreAdministrators  :: Maybe Bool      -- ^ 'True' if a group has ‘All Members Are Admins’ enabled.
   , chatPhoto                        :: Maybe ChatPhoto -- ^ Chat photo. Returned only in getChat.
   , chatDescription                  :: Maybe Text      -- ^ Description, for supergroups and channel chats. Returned only in getChat.
   , chatInviteLink                   :: Maybe Text      -- ^ Chat invite link, for supergroups and channel chats. Returned only in getChat.
@@ -168,7 +219,21 @@ data Chat = Chat
 
 
 instance ToJSON   Chat
-instance FromJSON Chat
+instance FromJSON Chat where
+  parseJSON (Object v) = 
+      Chat <$> v .: "id"
+           <*> v .: "type"
+           <*> v .:? "title"
+           <*> v .:? "username"
+           <*> v .:? "first_name"
+           <*> v .:? "last_name"
+           <*> v .:? "photo"
+           <*> v .:? "description"
+           <*> v .:? "invite_link"
+           <*> v .:? "pinned_message"
+           <*> v .:? "sticker_set_name"
+           <*> v .:? "can_set_sticker_set"
+
 
 
 -- | Type of chat.
@@ -180,7 +245,17 @@ data ChatType
   deriving (Generic, Show)
 
 instance ToJSON   ChatType 
-instance FromJSON ChatType 
+instance FromJSON ChatType where
+  parseJSON = genericParseJSON defaultOptions { constructorTagModifier = toLegacy }
+        
+toLegacy :: String -> String
+toLegacy "ChatTypePrivate" = "private"
+toLegacy "ChatTypeGroup" = "group"
+toLegacy "ChatTypeChannel" = "channel"
+toLegacy "ChatTypeSupergroup" = "supergroup"
+toLegacy s = s
+
+
 
 -- ** 'PhotoSize'
 
