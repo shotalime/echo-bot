@@ -25,4 +25,4 @@ cabal.project.local
 cabal.project.local~
 .HTF/
 .ghc.environment.*
-./src/config.hs
+src/BotConfig.hs
