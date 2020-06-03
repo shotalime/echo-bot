@@ -11,6 +11,16 @@ import qualified Data.ByteString.Lazy          as L
 import qualified Text.URI                      as URI
 import           Data.Time.Clock.POSIX          ( POSIXTime )
 import           Data.Foldable
+import           Text.Casing
+
+
+-- from CamelCase to quiet_snake and drop Type name
+
+toTelegramName :: String -> String -> String
+toTelegramName str = quietSnake . drop (length str)
+
+
+--  ** Updates
 
 data Updates = Updates
   { ok :: Bool
@@ -20,16 +30,17 @@ data Updates = Updates
 instance FromJSON Updates
 instance ToJSON Updates
 
+
 --  ** Update
 -- This object represents an incoming update.
 -- At most one of the optional parameters can be present in any given update.
 
 data Update = Update
-  { update_id            :: Integer -- The update's unique identifier.
-  , message              :: Maybe Message -- Optional. New incoming message
-  , edited_message       :: Maybe Message -- Optional. New version of a message that is known to the bot and was edited
-  , channel_post         :: Maybe Message -- Optional. New incoming channel post of any kind — text, photo, sticker, etc.
-  , edited_channel_post  :: Maybe Message --	Optional. New version of a channel post that is known to the bot and was edited
+  { updateId            :: Integer -- The update's unique identifier.
+  , updateMessage              :: Maybe Message -- Optional. New incoming message
+  , updatEditedMessage       :: Maybe Message -- Optional. New version of a message that is known to the bot and was edited
+  , updatChannelPost         :: Maybe Message -- Optional. New incoming channel post of any kind — text, photo, sticker, etc.
+  , updatEditedChannelPost  :: Maybe Message --	Optional. New version of a channel post that is known to the bot and was edited
  -- , inline_query         :: Maybe InlineQuery -- Optional. New incoming inline query
  -- , chosen_inline_result :: Maybe ChosenInlineResult --	Optional. The result of an inline query that was chosen by a user and sent to their chat partner.
   -- , callback_query       :: Maybe CallbackQuery -- Optional. New incoming callback query
@@ -39,8 +50,15 @@ data Update = Update
   -- , poll_answer          :: Maybe PollAnswer -- Optional. A user changed their answer in a non-anonymous poll. Bots receive new votes only in polls that were sent by the bot itself.
   } deriving (Show, Generic)
 
-instance FromJSON Update
-instance ToJSON Update
+instance FromJSON Update where
+  parseJSON (Object v) = 
+    Update <$> v .: "update_id"
+           <*> v .:? "message"
+           <*> v .:? "edited_message"
+           <*> v .:? "channel_post"
+           <*> v .:? "edited_channel_post"
+
+instance ToJSON Update where
 
 --  ** Message
 -- This object represents a message.
@@ -146,7 +164,16 @@ data MessageEntity = MessageEntity
   , messageEntityUser :: Maybe User -- ^ For “text_mention” only, the mentioned user
   } deriving (Generic, Show)
 
-instance FromJSON MessageEntity
+instance FromJSON MessageEntity where
+  parseJSON (Object v) = 
+    MessageEntity <$> v .: "type"
+                  <*> v .: "offset"
+                  <*> v .: "length"
+                  <*> v .:? "url"
+                  <*> v .:? "user"
+
+
+
 instance ToJSON MessageEntity
 
 -- | Type of the entity. Can be mention (@username), hashtag, bot_command, url, email, bold (bold text), italic (italic text), underline (underlined text), strikethrough, code (monowidth string), pre (monowidth block), text_link (for clickable text URLs), text_mention (for users without usernames), cashtag, phone_number
@@ -168,7 +195,9 @@ data MessageEntityType
   | MessageEntityPhoneNumber -- ^ See <https://core.telegram.org/tdlib/docs/classtd_1_1td__api_1_1text_entity_type_phone_number.html>.
   deriving (Eq, Show, Generic)
 
-instance FromJSON MessageEntityType
+instance FromJSON MessageEntityType where
+  parseJSON = genericParseJSON defaultOptions { constructorTagModifier = toTelegramName "MessageEntity" }
+
 instance ToJSON MessageEntityType
 
 -- ** User
@@ -246,17 +275,11 @@ data ChatType
 
 instance ToJSON   ChatType 
 instance FromJSON ChatType where
-  parseJSON = genericParseJSON defaultOptions { constructorTagModifier = toLegacy }
+  parseJSON = genericParseJSON defaultOptions { constructorTagModifier = toTelegramName "ChatType" }
         
-toLegacy :: String -> String
-toLegacy "ChatTypePrivate" = "private"
-toLegacy "ChatTypeGroup" = "group"
-toLegacy "ChatTypeChannel" = "channel"
-toLegacy "ChatTypeSupergroup" = "supergroup"
-toLegacy s = s
 
 
-
+ 
 -- ** 'PhotoSize'
 
 -- | This object represents one size of a photo or a file / sticker thumbnail.
@@ -268,14 +291,21 @@ data PhotoSize = PhotoSize
   } deriving (Generic, Show)
 
 instance ToJSON   PhotoSize 
-instance FromJSON PhotoSize 
+instance FromJSON PhotoSize where
+  parseJSON (Object v) = 
+      PhotoSize <$> v .: "file_id"
+                <*> v .: "width"
+                <*> v .: "height"
+                <*> v .:? "file_size"
+
+
 
 -- ** 'Audio'
 
 -- | This object represents an audio file to be treated as music by the Telegram clients.
 data Audio = Audio
   { audioFileId :: Text -- ^ Unique identifier for this file
-  , audioDuration :: Int -- ^ Duration of the audio in seconds as defined by sender
+  , audioDuration :: Integer -- ^ Duration of the audio in seconds as defined by sender
   , audioPerformer :: Maybe Text -- ^ Performer of the audio as defined by sender or by audio tags
   , audioTitle :: Maybe Text -- ^ Title of the audio as defined by sender or by audio tags
   , audioMimeType :: Maybe Text -- ^ MIME type of the file as defined by sender
@@ -283,8 +313,14 @@ data Audio = Audio
   } deriving (Generic, Show)
 
 instance ToJSON   Audio 
-instance FromJSON Audio 
-
+instance FromJSON Audio where
+  parseJSON (Object v) = 
+      Audio <$> v .: "file_id"
+            <*> v .: "duration"
+            <*> v .:? "performer"
+            <*> v .:? "title"
+            <*> v .:? "mime_type"
+            <*> v .:? "file_size"
 -- ** 'Document'
 
 -- | This object represents a general file (as opposed to photos, voice messages and audio files).
@@ -297,8 +333,13 @@ data Document = Document
   } deriving (Generic, Show)
 
 instance ToJSON Document 
-instance FromJSON Document 
-
+instance FromJSON Document where
+  parseJSON (Object v) = 
+      Document <$> v .: "file_id"
+            <*> v .:? "thumb"
+            <*> v .:? "file_name"
+            <*> v .:? "mime_type"
+            <*> v .:? "file_size"
 -- ** 'Video'
 
 -- | This object represents a video file.
@@ -313,8 +354,15 @@ data Video = Video
   } deriving (Generic, Show)
 
 instance ToJSON Video 
-instance FromJSON Video 
-
+instance FromJSON Video where
+  parseJSON (Object v) = 
+      Video <$> v .: "file_id"
+            <*> v .: "width"
+            <*> v .: "height"
+            <*> v .: "duration"
+            <*> v .:? "thumb"
+            <*> v .:? "mime_type"
+            <*> v .:? "file_size"
 
 
 -- ** 'Voice'
