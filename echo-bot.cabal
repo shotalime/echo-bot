@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: f526b15c35138deaccb8fc0df4deeb060ad99c6396980681bf2bec774b5698cd
+-- hash: 696cc52d04111f736fbabe876cbd2f9c3521eaab4f9fef6795d1b7264a656db8
 
 name:           echo-bot
 version:        0.1.0.0
@@ -28,7 +28,9 @@ source-repository head
 library
   exposed-modules:
       BotConfig
+      Telegram.Bot.API.Methods
       Telegram.Bot.API.Types
+      Telegram.Bot.API.Utils
   other-modules:
       Paths_echo_bot
   hs-source-dirs:
