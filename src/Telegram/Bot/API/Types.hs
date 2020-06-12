@@ -11,13 +11,7 @@ import qualified Data.ByteString.Lazy          as L
 import qualified Text.URI                      as URI
 import           Data.Time.Clock.POSIX          ( POSIXTime )
 import           Data.Foldable
-import           Text.Casing
-
-
--- from CamelCase to quiet_snake and drop Type name
-
-toTelegramName :: String -> String -> String
-toTelegramName str = quietSnake . drop (length str)
+import           Telegram.Bot.API.Utils 
 
 
 --  ** Updates
@@ -27,8 +21,8 @@ data Updates = Updates
   , result :: [Update]
   } deriving (Show, Generic)
 
-instance FromJSON Updates
 instance ToJSON Updates
+instance FromJSON Updates
 
 
 --  ** Update
@@ -36,20 +30,21 @@ instance ToJSON Updates
 -- At most one of the optional parameters can be present in any given update.
 
 data Update = Update
-  { updateId            :: Integer -- The update's unique identifier.
-  , updateMessage              :: Maybe Message -- Optional. New incoming message
-  , updatEditedMessage       :: Maybe Message -- Optional. New version of a message that is known to the bot and was edited
-  , updatChannelPost         :: Maybe Message -- Optional. New incoming channel post of any kind — text, photo, sticker, etc.
+  { updateId                :: Integer -- The update's unique identifier.
+  , updateMessage           :: Maybe Message -- Optional. New incoming message
+  , updatEditedMessage      :: Maybe Message -- Optional. New version of a message that is known to the bot and was edited
+  , updatChannelPost        :: Maybe Message -- Optional. New incoming channel post of any kind — text, photo, sticker, etc.
   , updatEditedChannelPost  :: Maybe Message --	Optional. New version of a channel post that is known to the bot and was edited
  -- , inline_query         :: Maybe InlineQuery -- Optional. New incoming inline query
  -- , chosen_inline_result :: Maybe ChosenInlineResult --	Optional. The result of an inline query that was chosen by a user and sent to their chat partner.
-  -- , callback_query       :: Maybe CallbackQuery -- Optional. New incoming callback query
+  , callback_query       :: Maybe CallbackQuery -- Optional. New incoming callback query
   -- , shipping_query       :: Maybe ShippingQuery -- Optional. New incoming shipping query. Only for invoices with flexible price
   -- , pre_checkout_query   :: PreCheckoutQuery -- Optional. New incoming pre-checkout query. Contains full information about checkout
   -- , poll                 :: Maybe Poll -- Optional. New poll state. Bots receive only updates about stopped polls and polls, which are sent by the bot
   -- , poll_answer          :: Maybe PollAnswer -- Optional. A user changed their answer in a non-anonymous poll. Bots receive new votes only in polls that were sent by the bot itself.
   } deriving (Show, Generic)
 
+instance ToJSON Update where
 instance FromJSON Update where
   parseJSON (Object v) = 
     Update <$> v .: "update_id"
@@ -57,8 +52,10 @@ instance FromJSON Update where
            <*> v .:? "edited_message"
            <*> v .:? "channel_post"
            <*> v .:? "edited_channel_post"
+           <*> v .:? "callback_query"
 
-instance ToJSON Update where
+
+
 
 --  ** Message
 -- This object represents a message.
@@ -105,11 +102,10 @@ data Message = Message
   , messagePinnedMessage :: Maybe Message -- ^ Specified message was pinned. Note that the Message object in this field will not contain further reply_to_message fields even if it is itself a reply.
   -- , messageInvoice :: Maybe Invoice -- ^ Message is an invoice for a payment, information about the invoice. More about payments »
   -- , messageSuccessfulPayment :: Maybe SuccessfulPayment -- ^ Message is a service message about a successful payment, information about the payment. More about payments »
+  , messageReplyMarkup :: Maybe InlineKeyboardMarkup
   } deriving (Generic, Show)
 
-
 instance ToJSON Message
-
 instance FromJSON Message where
   parseJSON (Object v) = 
     Message <$> v .: "message_id"
@@ -149,10 +145,9 @@ instance FromJSON Message where
             <*> v .:? "migrate_to_chat_id"
             <*> v .:? "migrate_from_chat_id"
             <*> v .:? "pinned_message"
+            <*> v .:? "reply_markup"
 
             
-
-
 -- ** MessageEntity
 
 -- | This object represents one special entity in a text message. For example, hashtags, usernames, URLs, etc.
@@ -163,7 +158,8 @@ data MessageEntity = MessageEntity
   , messageEntityUrl :: Maybe Text -- ^ For “text_link” only, url that will be opened after user taps on the text
   , messageEntityUser :: Maybe User -- ^ For “text_mention” only, the mentioned user
   } deriving (Generic, Show)
-
+  
+instance ToJSON MessageEntity
 instance FromJSON MessageEntity where
   parseJSON (Object v) = 
     MessageEntity <$> v .: "type"
@@ -173,10 +169,8 @@ instance FromJSON MessageEntity where
                   <*> v .:? "user"
 
 
-
-instance ToJSON MessageEntity
-
 -- | Type of the entity. Can be mention (@username), hashtag, bot_command, url, email, bold (bold text), italic (italic text), underline (underlined text), strikethrough, code (monowidth string), pre (monowidth block), text_link (for clickable text URLs), text_mention (for users without usernames), cashtag, phone_number
+
 data MessageEntityType
   = MessageEntityMention
   | MessageEntityHashtag
@@ -195,10 +189,10 @@ data MessageEntityType
   | MessageEntityPhoneNumber -- ^ See <https://core.telegram.org/tdlib/docs/classtd_1_1td__api_1_1text_entity_type_phone_number.html>.
   deriving (Eq, Show, Generic)
 
+instance ToJSON MessageEntityType
 instance FromJSON MessageEntityType where
   parseJSON = genericParseJSON defaultOptions { constructorTagModifier = toTelegramName "MessageEntity" }
 
-instance ToJSON MessageEntityType
 
 -- ** User
 
@@ -214,6 +208,7 @@ data User = User
   , userLanguageCode :: Maybe Text -- ^ IETF language tag of the user's language
   } deriving (Show, Generic)
 
+instance ToJSON User
 instance FromJSON User where
   parseJSON (Object v) = 
     User <$> v .: "id"
@@ -223,15 +218,13 @@ instance FromJSON User where
          <*> v .:? "username"
          <*> v .:? "language_code"
 
-instance ToJSON User
-
 -- ** Chat
 
 -- | This object represents a chat.
 --
 -- <https://core.telegram.org/bots/api#chat>
 data Chat = Chat
-  { chatId                           :: Int          -- ^ Unique identifier for this chat. This number may be greater than 32 bits and some programming languages may have difficulty/silent defects in interpreting it. But it is smaller than 52 bits, so a signed 64 bit integer or double-precision Double type are safe for storing this identifier.
+  { chatId                           :: ChatId          -- ^ Unique identifier for this chat. This number may be greater than 32 bits and some programming languages may have difficulty/silent defects in interpreting it. But it is smaller than 52 bits, so a signed 64 bit integer or double-precision Double type are safe for storing this identifier.
   , chatType                         :: ChatType        -- ^ Type of chat.
   , chatTitle                        :: Maybe Text      -- ^ Title, for supergroups, channels and group chats
   , chatUsername                     :: Maybe Text      -- ^ Username, for private chats, supergroups and channels if available
@@ -246,24 +239,23 @@ data Chat = Chat
   , chatCanSetStickerSet             :: Maybe Bool      -- ^ True, if the bot can change the group sticker set. Returned only in getChat.
   } deriving (Generic, Show)
 
-
 instance ToJSON   Chat
 instance FromJSON Chat where
   parseJSON (Object v) = 
-      Chat <$> v .: "id"
-           <*> v .: "type"
-           <*> v .:? "title"
-           <*> v .:? "username"
-           <*> v .:? "first_name"
-           <*> v .:? "last_name"
-           <*> v .:? "photo"
-           <*> v .:? "description"
-           <*> v .:? "invite_link"
-           <*> v .:? "pinned_message"
-           <*> v .:? "sticker_set_name"
-           <*> v .:? "can_set_sticker_set"
+    Chat <$> v .: "id"
+         <*> v .: "type"
+         <*> v .:? "title"
+         <*> v .:? "username"
+         <*> v .:? "first_name"
+         <*> v .:? "last_name"
+         <*> v .:? "photo"
+         <*> v .:? "description"
+         <*> v .:? "invite_link"
+         <*> v .:? "pinned_message"
+         <*> v .:? "sticker_set_name"
+         <*> v .:? "can_set_sticker_set"
 
-
+type ChatId = Integer
 
 -- | Type of chat.
 data ChatType
@@ -276,10 +268,8 @@ data ChatType
 instance ToJSON   ChatType 
 instance FromJSON ChatType where
   parseJSON = genericParseJSON defaultOptions { constructorTagModifier = toTelegramName "ChatType" }
-        
-
-
  
+
 -- ** 'PhotoSize'
 
 -- | This object represents one size of a photo or a file / sticker thumbnail.
@@ -293,11 +283,10 @@ data PhotoSize = PhotoSize
 instance ToJSON   PhotoSize 
 instance FromJSON PhotoSize where
   parseJSON (Object v) = 
-      PhotoSize <$> v .: "file_id"
-                <*> v .: "width"
-                <*> v .: "height"
-                <*> v .:? "file_size"
-
+    PhotoSize <$> v .: "file_id"
+              <*> v .: "width"
+              <*> v .: "height"
+              <*> v .:? "file_size"
 
 
 -- ** 'Audio'
@@ -315,12 +304,14 @@ data Audio = Audio
 instance ToJSON   Audio 
 instance FromJSON Audio where
   parseJSON (Object v) = 
-      Audio <$> v .: "file_id"
-            <*> v .: "duration"
-            <*> v .:? "performer"
-            <*> v .:? "title"
-            <*> v .:? "mime_type"
-            <*> v .:? "file_size"
+    Audio <$> v .: "file_id"
+          <*> v .: "duration"
+          <*> v .:? "performer"
+          <*> v .:? "title"
+          <*> v .:? "mime_type"
+          <*> v .:? "file_size"
+
+
 -- ** 'Document'
 
 -- | This object represents a general file (as opposed to photos, voice messages and audio files).
@@ -335,11 +326,13 @@ data Document = Document
 instance ToJSON Document 
 instance FromJSON Document where
   parseJSON (Object v) = 
-      Document <$> v .: "file_id"
-            <*> v .:? "thumb"
-            <*> v .:? "file_name"
-            <*> v .:? "mime_type"
-            <*> v .:? "file_size"
+    Document <$> v .: "file_id"
+             <*> v .:? "thumb"
+             <*> v .:? "file_name"
+             <*> v .:? "mime_type"
+             <*> v .:? "file_size"
+
+
 -- ** 'Video'
 
 -- | This object represents a video file.
@@ -356,13 +349,13 @@ data Video = Video
 instance ToJSON Video 
 instance FromJSON Video where
   parseJSON (Object v) = 
-      Video <$> v .: "file_id"
-            <*> v .: "width"
-            <*> v .: "height"
-            <*> v .: "duration"
-            <*> v .:? "thumb"
-            <*> v .:? "mime_type"
-            <*> v .:? "file_size"
+    Video <$> v .: "file_id"
+          <*> v .: "width"
+          <*> v .: "height"
+          <*> v .: "duration"
+          <*> v .:? "thumb"
+          <*> v .:? "mime_type"
+          <*> v .:? "file_size"
 
 
 -- ** 'Voice'
@@ -376,7 +369,13 @@ data Voice = Voice
   } deriving (Generic, Show)
 
 instance ToJSON Voice 
-instance FromJSON Voice 
+instance FromJSON Voice where
+  parseJSON (Object v) = 
+    Voice <$> v .: "file_id"
+          <*> v .: "duration"
+          <*> v .:? "mime_type"
+          <*> v .:? "file_size"
+
 
 
 -- ** 'VideoNote'
@@ -391,7 +390,14 @@ data VideoNote = VideoNote
   } deriving (Generic, Show)
 
 instance ToJSON VideoNote 
-instance FromJSON VideoNote 
+instance FromJSON VideoNote where
+  parseJSON (Object v) = 
+    VideoNote <$> v .: "file_id"
+              <*> v .: "length"
+              <*> v .: "duration"
+              <*> v .:? "thumb"
+              <*> v .:? "file_size"
+
 
 -- ** 'Contact'
 
@@ -404,7 +410,14 @@ data Contact = Contact
   } deriving (Generic, Show)
 
 instance ToJSON Contact 
-instance FromJSON Contact 
+instance FromJSON Contact where
+  parseJSON (Object v) = 
+    Contact <$> v .: "phone_number"
+            <*> v .: "first_name"
+            <*> v .:? "last_name"
+            <*> v .:? "user_id"
+
+
 
 -- ** Location
 
@@ -415,7 +428,11 @@ data Location = Location
   } deriving (Generic, Show)
 
 instance ToJSON Location 
-instance FromJSON Location 
+instance FromJSON Location where
+  parseJSON (Object v) = 
+    Location <$> v .: "longitude"
+             <*> v .: "latitude"
+
 
 -- ** 'Venue'
 
@@ -428,7 +445,13 @@ data Venue = Venue
   } deriving (Generic, Show)
 
 instance ToJSON Venue 
-instance FromJSON Venue
+instance FromJSON Venue where
+  parseJSON (Object v) = 
+    Venue <$> v .: "location"
+          <*> v .: "title"
+          <*> v .: "address"
+          <*> v .:? "foursquare_id"
+
 
 -- ** 'UserProfilePhotos'
 
@@ -438,9 +461,9 @@ data UserProfilePhotos = UserProfilePhotos
   , userProfilePhotosPhotos :: [[PhotoSize]] -- ^ Requested profile pictures (in up to 4 sizes each)
   } deriving (Generic, Show)
 
-
 instance ToJSON UserProfilePhotos 
 instance FromJSON UserProfilePhotos  
+
 
 -- ** 'File'
 
@@ -454,37 +477,9 @@ data File = File
   , fileFilePath :: Maybe Text -- ^ File path. Use https://api.telegram.org/file/bot<token>/<file_path> to get the file.
   } deriving (Generic, Show)
 
-
 instance ToJSON File 
 instance FromJSON File    
 
--- ** 'ReplyKeyboardMarkup'
-
--- | This object represents a custom keyboard with reply options (see Introduction to bots for details and examples).
-data ReplyKeyboardMarkup = ReplyKeyboardMarkup
-  { replyKeyboardMarkupKeyboard :: [[KeyboardButton]] -- ^ Array of button rows, each represented by an Array of KeyboardButton objects
-  , replyKeyboardMarkupResizeKeyboard :: Maybe Bool -- ^ Requests clients to resize the keyboard vertically for optimal fit (e.g., make the keyboard smaller if there are just two rows of buttons). Defaults to false, in which case the custom keyboard is always of the same height as the app's standard keyboard.
-  , replyKeyboardMarkupOneTimeKeyboard :: Maybe Bool -- ^ Requests clients to hide the keyboard as soon as it's been used. The keyboard will still be available, but clients will automatically display the usual letter-keyboard in the chat – the user can press a special button in the input field to see the custom keyboard again. Defaults to false.
-  , replyKeyboardMarkupSelective :: Maybe Bool -- ^ Use this parameter if you want to show the keyboard to specific users only. Targets: 1) users that are @mentioned in the text of the Message object; 2) if the bot's message is a reply (has reply_to_message_id), sender of the original message.
-  } deriving (Generic, Show)
-
-instance ToJSON ReplyKeyboardMarkup 
-instance FromJSON ReplyKeyboardMarkup    
-
-
--- ** 'KeyboardButton'
-
--- | This object represents one button of the reply keyboard.
--- For simple text buttons String can be used instead of this object
--- to specify text of the button. Optional fields are mutually exclusive.
-data KeyboardButton = KeyboardButton
-  { keyboardButtonText :: Text -- ^ Text of the button. If none of the optional fields are used, it will be sent as a message when the button is pressed
-  , keyboardButtonRequestContact :: Maybe Bool -- ^ If True, the user's phone number will be sent as a contact when the button is pressed. Available in private chats only
-  , keyboardButtonRequestLocation :: Maybe Bool -- ^ If True, the user's current location will be sent when the button is pressed. Available in private chats only
-  } deriving (Generic, Show)
-
-instance ToJSON KeyboardButton 
-instance FromJSON KeyboardButton    
 
 -- ** Chat photo
 
@@ -496,3 +491,69 @@ data ChatPhoto = ChatPhoto
 
 instance ToJSON ChatPhoto 
 instance FromJSON ChatPhoto  
+
+
+-- ** InlineKeyboardMarkup
+
+-- | This object represents an inline keyboard that appears right next to the message it belongs to.
+
+data InlineKeyboardMarkup = InlineKeyboardMarkup -- Array of button rows, each represented by an Array of InlineKeyboardButton objects
+  {inlineKeyboardButtons :: [[InlineKeyboardButton]]} deriving (Generic, Show) 
+
+instance ToJSON InlineKeyboardMarkup where
+  toJSON (InlineKeyboardMarkup a ) = object 
+    [ "inline_keyboard" .= a ]
+
+instance FromJSON InlineKeyboardMarkup where
+  parseJSON (Object v) = 
+    InlineKeyboardMarkup <$> v .: "inline_keyboard"
+
+-- ** InlineKeyboardButton
+-- | This object represents one button of an inline keyboard. You must use exactly one of the optional fields.
+                      
+data InlineKeyboardButton = InlineKeyboardButton 
+  { inlineKeyboardButtonText :: Text -- Label text on the button
+  -- , inlineKeyboardButtonUrl :: Maybe Text 
+  --  , inlineKeyboardMarkupLoginUrl :: Maybe LoginUrl 
+  , inlineKeyboardButtonCallbackData :: Maybe Text -- Data to be sent in a callback query to the bot when button is pressed, 1-64 bytes
+  -- , inlineKeyboardMarkupSwitchInlineQuery :: Maybe Text 
+  -- , inlineKeyboardMarkupSwitchInlineQueryCurrentChat :: Maybe Text 
+  --  , inlineKeyboardMarkupCallbackGame :: CallbackGame
+  -- , inlineKeyboardMarkupPay :: Maybe Bool 
+  } 
+    deriving (Generic, Show)
+
+instance ToJSON InlineKeyboardButton where
+  toJSON (InlineKeyboardButton a b) = object 
+    [ "text" .= a
+    , "callback_data" .= b]
+
+instance FromJSON InlineKeyboardButton where
+  parseJSON (Object v) = 
+    InlineKeyboardButton <$> v .: "text" 
+                         <*> v .:? "callback_data"
+
+-- ** CallbackQuery
+-- | This object represents an incoming callback query from a callback button in an inline keyboard. 
+-- If the button that originated the query was attached to a message sent by the bot, the field message will be present. 
+-- If the button was attached to a message sent via the bot (in inline mode), the field inline_message_id will be present. 
+-- Exactly one of the fields data or game_short_name will be present.
+
+data CallbackQuery = CallbackQuery
+  { callbackQueryId :: Text 
+  , callbackQueryFrom :: User
+  , callbackQueryMessage :: Maybe Message
+  , callbackQueryInlineMessageId :: Maybe Text 
+  , callbackChatInstance :: Maybe Text 
+  , callbackChatData :: Maybe Text} deriving (Generic, Show)
+
+instance ToJSON CallbackQuery 
+instance FromJSON CallbackQuery where
+  parseJSON (Object v) = 
+    CallbackQuery <$> v .: "id" 
+                  <*> v .: "from"
+                  <*> v .:? "message"
+                  <*> v .:? "inline_message_id"
+                  <*> v .:? "chat_instance"
+                  <*> v .:? "data"
+
