@@ -35,6 +35,7 @@ dependencies:
 - modern-uri
 - time
 - casing
+- configurator
 
 library:
   source-dirs: src

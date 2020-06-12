@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 696cc52d04111f736fbabe876cbd2f9c3521eaab4f9fef6795d1b7264a656db8
+-- hash: b9641ac452cb9dfbe9b8e2baf492f7622fa5005701830470125dbe2931dc0249
 
 name:           echo-bot
 version:        0.1.0.0
@@ -42,6 +42,7 @@ library
     , base >=4.7 && <5
     , bytestring
     , casing
+    , configurator
     , modern-uri
     , req
     , req-conduit
@@ -63,6 +64,7 @@ executable echo-bot-exe
     , base >=4.7 && <5
     , bytestring
     , casing
+    , configurator
     , echo-bot
     , modern-uri
     , req
@@ -86,6 +88,7 @@ test-suite echo-bot-test
     , base >=4.7 && <5
     , bytestring
     , casing
+    , configurator
     , echo-bot
     , modern-uri
     , req

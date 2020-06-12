@@ -15,6 +15,7 @@ import           Data.Maybe                     ( fromJust, isJust )
 import           Text.Casing
 import           Telegram.Bot.API.Types
 import           BotConfig
+import qualified Data.Configurator as C
 
 api :: Text
 api = "api.telegram.org"
