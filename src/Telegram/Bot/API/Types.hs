@@ -37,7 +37,7 @@ data Update = Update
   , updatEditedChannelPost  :: Maybe Message --	Optional. New version of a channel post that is known to the bot and was edited
  -- , inline_query         :: Maybe InlineQuery -- Optional. New incoming inline query
  -- , chosen_inline_result :: Maybe ChosenInlineResult --	Optional. The result of an inline query that was chosen by a user and sent to their chat partner.
-  , callback_query       :: Maybe CallbackQuery -- Optional. New incoming callback query
+  , callbackQuery          :: Maybe CallbackQuery -- Optional. New incoming callback query
   -- , shipping_query       :: Maybe ShippingQuery -- Optional. New incoming shipping query. Only for invoices with flexible price
   -- , pre_checkout_query   :: PreCheckoutQuery -- Optional. New incoming pre-checkout query. Contains full information about checkout
   -- , poll                 :: Maybe Poll -- Optional. New poll state. Bots receive only updates about stopped polls and polls, which are sent by the bot
@@ -53,8 +53,6 @@ instance FromJSON Update where
            <*> v .:? "channel_post"
            <*> v .:? "edited_channel_post"
            <*> v .:? "callback_query"
-
-
 
 
 --  ** Message
@@ -544,8 +542,8 @@ data CallbackQuery = CallbackQuery
   , callbackQueryFrom :: User
   , callbackQueryMessage :: Maybe Message
   , callbackQueryInlineMessageId :: Maybe Text 
-  , callbackChatInstance :: Maybe Text 
-  , callbackChatData :: Maybe Text} deriving (Generic, Show)
+  , callbackQueryInstance :: Maybe Text 
+  , callbackQueryData :: Maybe String} deriving (Generic, Show)
 
 instance ToJSON CallbackQuery 
 instance FromJSON CallbackQuery where
@@ -557,3 +555,4 @@ instance FromJSON CallbackQuery where
                   <*> v .:? "chat_instance"
                   <*> v .:? "data"
 
+                  
